@@ -12,6 +12,9 @@ short_description: "QNLP retrieval — DisCoCat + Born-rule overlap"
 
 # qrouter
 
+> 📘 **New:** [Build Your Own MCP Server With Auth + Billing — the 60-page guide ($29)](https://kempefire.gumroad.com/l/build-your-own-mcp)
+> Production stack used to ship this Space + ask-meridian.uk.
+
 Quantum natural-language retrieval for scientific knowledge.
 
 A research artifact: route queries to relevant text by encoding both as
