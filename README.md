@@ -1,3 +1,15 @@
+---
+title:        qrouter
+emoji:        🔬
+colorFrom:    indigo
+colorTo:      purple
+sdk:          docker
+app_port:     7860
+pinned:       false
+license:      mit
+short_description: "QNLP retrieval (DisCoCat + variational circuits, Born-rule overlap)"
+---
+
 # qrouter
 
 Quantum natural-language retrieval for scientific knowledge.
