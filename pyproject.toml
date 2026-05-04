@@ -9,14 +9,23 @@ authors     = [{ name = "lkempe" }]
 keywords    = ["qnlp", "quantum", "retrieval", "discocat", "lambeq", "pennylane", "mcp"]
 
 dependencies = [
-  "lambeq>=0.4",
-  "pennylane>=0.39",
-  "jax>=0.4",
+  # Always-required (the FastAPI wrapper boots even when the quantum
+  # stack isn't installed, returning stub responses).
   "numpy>=2.0",
-  "scipy>=1.13",
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
+# The actual QNLP backend. Heavyweight (~2 GB transitive); install only
+# on machines that will run the real ranking. Without these the server
+# still answers `/rank` with the unranked fixture + a `mode: "stub"` flag.
+qnlp = [
+  "lambeq>=0.4",
+  "pennylane>=0.39",
+  "jax>=0.4",
+  "scipy>=1.13",
+]
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
@@ -27,8 +36,9 @@ mcp = [
 ]
 
 [project.scripts]
-qrouter        = "qrouter.cli:main"
-qrouter-mcp    = "qrouter.mcp_server:main"
+qrouter         = "qrouter.cli:main"
+qrouter-serve   = "qrouter.http_server:main_run"
+qrouter-mcp     = "qrouter.mcp_server:main"
 
 [build-system]
 requires      = ["hatchling"]
