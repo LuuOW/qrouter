@@ -62,7 +62,9 @@ def _state_vector(circuit) -> np.ndarray:
         circuit = circuit.lambdify(*syms)(*vals)
 
     result = circuit.eval()
-    arr = np.asarray(result.array).flatten().astype(np.complex128)
+    # Lambeq's eval returns either its Tensor wrapper (with .array) or a
+    # raw numpy ndarray, depending on whether substitution happened first.
+    arr = np.asarray(getattr(result, "array", result)).flatten().astype(np.complex128)
     norm = np.linalg.norm(arr)
     if norm == 0:
         return arr
