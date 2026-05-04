@@ -31,13 +31,36 @@ class ScoredDoc:
 def _state_vector(circuit) -> np.ndarray:
     """Evaluate a lambeq quantum circuit to a complex state vector.
 
-    Lambeq's circuit objects expose `.eval(backend=...)` returning a
-    Tensor whose `.array` is the (potentially trace-out'd) state. For
-    sentences with type S, this collapses to a 1-qubit (length-2) state.
+    Lambeq's IQPAnsatz emits circuits with symbolic parameters (the
+    variational angles you would normally TRAIN). Calling `.eval()`
+    directly on a symbolic circuit raises:
+
+      "Attempting to access modules for a symbolic expression."
+
+    For day-1 retrieval we don't have a labelled training set yet, so
+    we bind every free symbol to a deterministic angle derived from a
+    SHA-256 hash of the symbol's string name. Concretely: distinct
+    words/types → distinct angles → distinct circuits → distinct
+    states. This gives a *meaningful* (non-trivial, deterministic,
+    unlearned) geometry — sufficient for "does the pipeline work end
+    to end" testing. The real research switches `subs_strategy="zero"`
+    or `subs_strategy="trained"` once we have the eval set + a learned
+    parameter dict.
     """
-    # Imported lazily so a `import qrouter` doesn't drag the simulator
-    # across the project boundary.
-    from lambeq.backend.quantum import Measure  # noqa: F401  (presence guard)
+    from lambeq.backend.quantum import Measure  # noqa: F401  presence guard
+
+    syms = list(getattr(circuit, "free_symbols", []) or [])
+    if syms:
+        import hashlib
+        vals = []
+        for s in syms:
+            h = int(hashlib.sha256(str(s).encode("utf-8")).hexdigest(), 16) % 1024
+            vals.append((h / 1024.0) * 2 * np.pi)
+        # lambeq Diagram.lambdify(*syms)(*vals) returns a concrete diagram
+        # with all parameters substituted. The resulting object is then
+        # safe to .eval().
+        circuit = circuit.lambdify(*syms)(*vals)
+
     result = circuit.eval()
     arr = np.asarray(result.array).flatten().astype(np.complex128)
     norm = np.linalg.norm(arr)
