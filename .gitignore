@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Env
+.venv/
+venv/
+.env
+.envrc
+
+# uv
+uv.lock
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data — don't commit downloaded arXiv corpora
+data/
+*.parquet
+*.feather
+*.npz
