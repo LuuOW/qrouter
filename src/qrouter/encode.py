@@ -1,19 +1,24 @@
-"""Encode text → DisCoCat diagram → variational quantum circuit.
+"""Encode text → diagram → variational quantum circuit.
 
-This module is a thin wrapper around lambeq so the rest of the codebase
-doesn't have to know whether we're using the BobcatParser, a smaller
-spider parser, or a future replacement. If lambeq's API moves, this is
-the only file that needs to update.
+Two parser backends, gated by the QROUTER_PARSER env var:
+  spider   — SpiderReader. Zero remote downloads, no CCG. Each word is
+             a spider node; sentence diagram is a chain. Sufficient for
+             day-1 Born-rule overlap; loses linguistic structure that
+             distinguishes "cat chases dog" from "dog chases cat".
+  bobcat   — BobcatParser. Real CCG parsing → DisCoCat. Needs a model
+             download from qnlp.cambridgequantum.com on first use.
+             Currently DOWN (CQ's CDN); we re-enable bobcat once the
+             upstream is back or we self-host the weights on HF.
 
-The encoding is deliberately simple at day-1:
-  text → BobcatParser → DisCoCat diagram → AtomicType ansatz
-       → IQPAnsatz circuit (n_layers=1, n_qubits per type=1)
+Default is `spider` — it's the only one that boots reliably right now.
 
-That's enough to exercise the geometry; we'll tune the ansatz once
-we have a real evaluation set.
+The ansatz layer is shared: AtomicType {N,S} → 1 qubit each, IQPAnsatz
+n_layers=1. Small enough to simulate fast on CPU, structured enough to
+show non-trivial overlap.
 """
 
 from dataclasses import dataclass
+import os
 from typing import Any
 
 from qrouter.corpus import Document
@@ -28,6 +33,8 @@ class EncodedDoc:
     circuit: Any   # lambeq.backend.quantum.Diagram (avoid heavy import here)
 
 
+PARSER_BACKEND = os.environ.get("QROUTER_PARSER", "spider").lower()
+
 # Lazily build the parser + ansatz so importing qrouter doesn't pay the
 # (very large) lambeq + spaCy + Bobcat model load cost unless we're
 # actually encoding something.
@@ -38,8 +45,14 @@ _ansatz = None
 def _get_parser():
     global _parser
     if _parser is None:
-        from lambeq import BobcatParser
-        _parser = BobcatParser(verbose="suppress")
+        if PARSER_BACKEND == "bobcat":
+            from lambeq import BobcatParser
+            _parser = BobcatParser(verbose="suppress")
+        else:
+            # SpiderReader needs no model download. Each word becomes a
+            # spider node; sentence is the chain composition.
+            from lambeq import spiders_reader
+            _parser = spiders_reader
     return _parser
 
 
@@ -49,19 +62,18 @@ def _get_ansatz():
         from lambeq import AtomicType, IQPAnsatz
         N = AtomicType.NOUN
         S = AtomicType.SENTENCE
-        # 1 qubit per atomic type, 1 IQP layer: small enough to simulate
-        # quickly, structured enough to show non-trivial overlap.
+        # 1 qubit per atomic type, 1 IQP layer.
         _ansatz = IQPAnsatz({N: 1, S: 1}, n_layers=1)
     return _ansatz
 
 
 def encode_one(text: str) -> Any:
-    """Parse a single string → DisCoCat diagram → quantum circuit."""
+    """Parse a single string → diagram → quantum circuit."""
     parser = _get_parser()
     ansatz = _get_ansatz()
     diagram = parser.sentence2diagram(text)
     if diagram is None:
-        raise ValueError(f"lambeq could not parse: {text!r}")
+        raise ValueError(f"parser could not handle: {text!r}")
     return ansatz(diagram)
 
 
