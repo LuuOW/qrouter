@@ -7,7 +7,7 @@ sdk:          docker
 app_port:     7860
 pinned:       false
 license:      mit
-short_description: "QNLP retrieval (DisCoCat + variational circuits, Born-rule overlap)"
+short_description: "QNLP retrieval — DisCoCat + Born-rule overlap"
 ---
 
 # qrouter
