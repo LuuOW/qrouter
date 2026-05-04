@@ -8,6 +8,16 @@ and ranking via Born-rule overlap. Classically simulable now; designed to
 also run on Quantinuum H-series and (with embedding) Xanadu photonic
 processors.
 
+**Live demo:** [`https://qrouter.ask-meridian.uk`](https://qrouter.ask-meridian.uk)
+
+```
+$ curl 'https://qrouter.ask-meridian.uk/rank?q=photons+going+through+barriers&top_k=3'
+```
+
+See [`docs/deploy.md`](./docs/deploy.md) for the hosting architecture
+(systemd + Cloudflare Tunnel on a shared VM) and how to flip the server
+between `stub` and `lambeq` backends.
+
 ## Status
 
 Working name. Day-1 scaffold. Not a product. Not stable. Not even

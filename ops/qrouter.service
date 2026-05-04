@@ -1,0 +1,29 @@
+[Unit]
+Description=qrouter — quantum NLP retrieval HTTP wrapper
+Documentation=https://github.com/LuuOW/qrouter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/qrouter
+Environment=QROUTER_HOST=127.0.0.1
+Environment=QROUTER_PORT=8004
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/qrouter/.venv/bin/uvicorn qrouter.http_server:app --host ${QROUTER_HOST} --port ${QROUTER_PORT} --app-dir /opt/qrouter/src
+Restart=on-failure
+RestartSec=5s
+
+# Hardening — read-only filesystem except for /opt/qrouter; no new privileges.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/qrouter
+
+[Install]
+WantedBy=multi-user.target
